@@ -1,4 +1,4 @@
-import * as THREE from '../three.js/build/three.module.js';
+import * as THREE from './modules/three.js/build/three.module.js';
 
 class Beam {
   static beamLength = 1;

@@ -1,10 +1,9 @@
-import * as THREE from '../three.js/build/three.module.js';
-import { OrbitControls } from '../three.js/examples/jsm/controls/OrbitControls.js';
+import * as THREE from './modules/three.js/build/three.module.js';
+import { OrbitControls } from './modules/three.js/examples/jsm/controls/OrbitControls.js';
 import { MKB } from './mkb.js';
 import { Animation } from './animation.js';
-import { MeshRenderer } from './mkbRenderer.js';
-import { TWEEN } from '../three.js/examples/jsm/libs/tween.module.min.js';
-import { GUI } from '../three.js/examples/jsm/libs/dat.gui.module.js';
+import { TWEEN } from './modules/three.js/examples/jsm/libs/tween.module.min.js';
+import { GUI } from './modules/three.js/examples/jsm/libs/dat.gui.module.js';
 
 let camera, scene, renderer, controls;
 let coreMKB;

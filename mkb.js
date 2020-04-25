@@ -1,4 +1,4 @@
-import * as THREE from '../three.js/build/three.module.js';
+import * as THREE from './modules/three.js/build/three.module.js';
 import {Joint} from './joint.js'
 import {Beam} from './beam.js'
 
