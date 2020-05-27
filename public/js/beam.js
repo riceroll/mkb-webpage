@@ -1,4 +1,4 @@
-import * as THREE from './modules/three.js/build/three.module.js';
+import * as THREE from '../../node_modules/three/build/three.module.js';
 
 class Beam {
   static beamLength = 1;
@@ -64,6 +64,10 @@ class Beam {
     return Math.sqrt(1 / (1 - this.contraction())) - 1;
   }
 
+  actuatorColor() {
+    return( new THREE.Color(1, 1, 1).copy(Beam.actuatorColor).multiplyScalar( (1 - Math.sqrt(this.constraint * 0.6) ) ));
+  }
+
   connectJoint(joint) {
     console.assert(this.joints.size <= 1);
     this.joints.add(joint);
@@ -73,7 +77,7 @@ class Beam {
   createMesh() {
     let mesh = new THREE.Object3D();
     let geometry = new THREE.CylinderBufferGeometry(1, 1, 1, 20);
-    let material = new THREE.MeshLambertMaterial( {color: Beam.actuatorColor} );
+    let material = new THREE.MeshLambertMaterial( {color: this.actuatorColor()} );
     let actuator = new THREE.Mesh(geometry, material);
     actuator.userData.parent = this;
     mesh.add(actuator);
@@ -122,7 +126,7 @@ class Beam {
   }
 
   updateColor() {
-    this.mesh.children[0].material.color.copy(Beam.actuatorColor);
+    this.mesh.children[0].material.color.copy(this.actuatorColor());
     if (this.hovered) {
       this.mesh.children[0].material.color.copy(Beam.colorHovered);
     }

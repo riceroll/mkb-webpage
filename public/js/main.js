@@ -1,31 +1,32 @@
-import * as THREE from './modules/three.js/build/three.module.js';
-import { OrbitControls } from './modules/three.js/examples/jsm/controls/OrbitControls.js';
+import * as THREE from '../../node_modules/three/build/three.module.js';
+import { OrbitControls } from '../../node_modules/three/examples/jsm/controls/OrbitControls.js';
+import { GUI } from '../../node_modules/three/examples/jsm/libs/dat.gui.module.js';
+
 import { MKB } from './mkb.js';
 import { Animation } from './animation.js';
-import { TWEEN } from './modules/three.js/examples/jsm/libs/tween.module.min.js';
-import { GUI } from './modules/three.js/examples/jsm/libs/dat.gui.module.js';
 
 let camera, scene, renderer, controls;
-let coreMKB;
-let effect;
-let raycaster = new THREE.Raycaster();
 let mouse = new THREE.Vector2();
+let raycaster = new THREE.Raycaster();
+let gui;
+
+let coreMKB;
+
 
 class Core {
   constructor(x=3, y=3, z=3) {
     this.mkb = new MKB(x, y, z, this);
     this.animation = new Animation(this.mkb);
-    this.addObjectsToScene();
-    this.focusCamera();
+    this.updateScene();
 
     this.pressingMeta = false;
+    this.constraintChanged = false;
   }
 
-  addObjectsToScene() {
-    scene.add(this.mkb.mesh);
-  }
-
-  focusCamera() {
+  updateScene() {
+    if (! (this.mkb.mesh in scene) ) {
+      scene.add(this.mkb.mesh);
+    }
     controls.target = this.mkb.center();
   }
 
@@ -45,14 +46,27 @@ class Core {
   }
 
   static onMouseClick(event) {
-    if (Core.GUIHovered()) return 0;
+    console.log('core clicked', coreMKB.constraintChanged);
+    if (coreMKB.constraintChanged) {
+      console.log('change constraint');
+      coreMKB.mkb.changeConstraint(gui.effect.constraint);
+      coreMKB.constraintChanged = false;
+    }
+
+    if (Core.GUIHovered()) {
+      return 0;
+    }
 
     mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
     mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
     let obj = objectCasted();
 
     if  (!coreMKB.pressingMeta) coreMKB.mkb.deselectAll();
-    coreMKB.mkb.select(obj);
+    let constraint = coreMKB.mkb.select(obj);
+    if (constraint !== -1) {
+      gui.effect.constraint = constraint;
+    }
   }
 
   static onKeyDown(e) {
@@ -63,6 +77,10 @@ class Core {
     coreMKB.pressingMeta = !(e.key === 'Meta');
   }
 
+}
+
+function initCore() {
+  coreMKB = new Core(gui.effect.x, gui.effect.y, gui.effect.z);
 }
 
 function initScene() {
@@ -106,13 +124,10 @@ function initGUI() {
 
   let effectController = function () {
     // dimension
-    this.x= 4;
-    this.y= 3;
-    this.z= 3;
-    this.reset = function() {
-      scene.children = [scene.children[0], scene.children[1]];
-      initMKB();
-    };
+    this.x= 2;
+    this.y= 2;
+    this.z= 2;
+    this.reset = initCore;
 
     // edit
     this.constraint = 0;
@@ -127,39 +142,40 @@ function initGUI() {
     this.simulate = function() {
       for (let j of coreMKB.mkb.joints) {
         let p = new THREE.Vector3();
-        j.setNextPosition(p.copy(j.position).divideScalar(2));
+        j.setNextPosition(p.copy(j.position).divideScalar(1.4));
       }
       coreMKB.animation.start();
     }
 
-
   };
 
-  let gui = new GUI();
-  let f1 = gui.addFolder('dimension');
-  let f2 = gui.addFolder('edit');
-  let f3 = gui.addFolder('action');
+  gui = {};
+  gui.sliders = {};
+  gui.window = new GUI();
+  let f1 = gui.window.addFolder('dimension');
+  let f2 = gui.window.addFolder('edit');
+  let f3 = gui.window.addFolder('action');
 
-  effect = new effectController();
-  f1.add( effect, "x", 2, 6 ,1);
-  f1.add( effect, "y", 2, 6 ,1);
-  f1.add( effect, "z", 2, 6 ,1);
-  f1.add( effect, "reset");
-  f2.add( effect, "constraint", 0, 1, 0.25);
-  f2.add( effect, "addBeam");
-  f2.add( effect, "removeBeam");
-  f3.add( effect, "simulate");
+  gui.effect = new effectController();
+  f1.add( gui.effect, "x", 2, 6 ,1);
+  f1.add( gui.effect, "y", 2, 6 ,1);
+  f1.add( gui.effect, "z", 2, 6 ,1);
+  f1.add( gui.effect, "reset");
+  gui.sliders.constraint = f2.add( gui.effect, "constraint", 0, 1, 0.25).listen();
+  f2.add( gui.effect, "addBeam");
+  f2.add( gui.effect, "removeBeam");
+  f3.add( gui.effect, "simulate");
   f1.open();
   f2.open();
   f3.open();
 
+
+  gui.sliders.constraint.onChange(function(value) {
+    console.log('constraint onChange');
+    coreMKB.constraintChanged = true;
+  });
+
 }
-
-function initMKB() {
-
-  coreMKB = new Core(effect.x, effect.y, effect.z);
-}
-
 
 function objectCasted() {
   raycaster.setFromCamera( mouse, camera );
@@ -179,18 +195,18 @@ function onWindowResize() {
 function animate() {
 
   coreMKB.animation.update();
-
   controls.update();
   renderer.render( scene, camera );
 
   requestAnimationFrame( animate );
 }
 
+
+// main ======================================================
+
 initGUI();
 initScene();
-
-initMKB();
-
+initCore();
 animate();
 
 window.addEventListener( 'mousemove', Core.onMouseMove, false );

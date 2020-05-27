@@ -1,4 +1,4 @@
-import * as THREE from './modules/three.js/build/three.module.js';
+import * as THREE from '../../node_modules/three/build/three.module.js';
 import {Joint} from './joint.js'
 import {Beam} from './beam.js'
 
@@ -119,12 +119,19 @@ class MKB {
   }
 
   select(obj) {
+    let constraint = -1;
     if (obj) {
       if ('parent' in obj.userData) {
-        obj.userData.parent.select();
-        this.selected.push(obj.userData.parent);
+        let parent = obj.userData.parent;
+        parent.select();
+        this.selected.push(parent);
+        if (parent instanceof Beam) {
+          constraint = parent.constraint;
+        }
       }
     }
+    console.log('return constraint', constraint);
+    return constraint;
   }
 
   beamExist(joint0, joint1) {
@@ -165,6 +172,16 @@ class MKB {
   removeJoint(joint) {
     this.joints.delete(joint);
     this.mesh.remove(joint.mesh);
+  }
+
+  changeConstraint(constraint) {
+    for (let obj of this.selected) {
+      if (obj instanceof Beam) {
+        console.log('mkb change beam constraint');
+        obj.constraint = constraint;
+      }
+    }
+    this.updateAll();
   }
 
 }
