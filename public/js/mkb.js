@@ -58,6 +58,45 @@ class MKB {
 
   }
 
+  loadVE(v, e) {
+    // data = JSON.parse(json);
+    // v = data['v'];
+    // e = data['e'];
+
+    for (let obj of this.beams) {
+      if (obj instanceof Beam) {
+        obj.disconnect();
+        this.mesh.remove(obj.mesh);
+        this.beams.delete(obj);
+      }
+    }
+
+    this.joints = [];
+
+    for (let vv of v) {
+      this.newJoint(vv[0], vv[1], vv[2]);
+    }
+
+    for (let ee of e) {
+      this.newBeam(ee[0], ee[1]);
+    }
+
+
+    this.joints = new Set(this.joints);
+
+    // this.updateAll();
+  }
+
+  newJoint(x, y, z) {
+    let j = new Joint(x, y, z, this);
+    this.joints.push(j);
+    this.mesh.add(j.mesh);
+  }
+
+  newBeam(iv0, iv1) {
+    this.appendBeam(this.joints[iv0], this.joints[iv1]);
+  }
+
   appendBeam(joint0, joint1) {
     let beam = new Beam(joint0, joint1, this);
     this.beams.add(beam);

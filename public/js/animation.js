@@ -5,6 +5,7 @@ class Animation {
   constructor(mkb) {
     this.mkb = mkb;
     this.startTime = 0;
+    this.ws = null;
 
     this.playing = false;
   }
@@ -40,6 +41,12 @@ class Animation {
       this.mkb.animate(t);
     }
 
+  }
+
+  update2() {
+    if (this.ws) {
+      this.ws.send('hehehe');
+    }
   }
 
 

@@ -104,7 +104,8 @@ function initScene() {
   scene.background = new THREE.Color( 0x222222 );
 
   camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
-  camera.position.set( 6, 6, 8 );
+  camera.position.set(0, -20, 1 );
+  camera.up.set(0,0,1);
 
   controls = new OrbitControls( camera, renderer.domElement );
   controls.minDistance = 1;
@@ -115,7 +116,7 @@ function initScene() {
   scene.add( aLight );
 
   let dLight = new THREE.DirectionalLight( "rgb(255,255,255)", 0.7);
-  dLight.translateOnAxis(new THREE.Vector3(1,1,1), 100);
+  dLight.translateOnAxis(new THREE.Vector3(1,-1,1), 100);
   scene.add( dLight );
 
 }
@@ -140,13 +141,42 @@ function initGUI() {
 
     // action
     this.simulate = function() {
-      for (let j of coreMKB.mkb.joints) {
-        let p = new THREE.Vector3();
-        j.setNextPosition(p.copy(j.position).divideScalar(1.4));
-      }
-      coreMKB.animation.start();
-    }
 
+      // for (let j of coreMKB.mkb.joints) {
+      //   let p = new THREE.Vector3();
+      //   j.setNextPosition(p.copy(j.position).divideScalar(1.4));
+      // }
+
+      let ws = new WebSocket('ws://localhost:8765');
+      ws.onmessage = (event) => {
+        let json = event.data;
+        let data = JSON.parse(json);
+        let v = data['v'];
+        let e = data['e'];
+        coreMKB.mkb.loadVE(v, e);
+      };
+      ws.onopen = (event) => {
+        ws.send('hehe');
+        coreMKB.animation.ws = ws;
+        coreMKB.animation.start();
+      };
+
+    };
+
+
+    this.load = function() {
+      let ws = new WebSocket('ws://localhost:8765');
+      ws.onmessage = (event) => {
+        let json = event.data;
+        let data = JSON.parse(json);
+        let v = data['v'];
+        let e = data['e'];
+        coreMKB.mkb.loadVE(v, e);
+      };
+      ws.onopen = (event) => {
+        ws.send('hehe');
+      };
+    };
   };
 
   gui = {};
@@ -165,6 +195,7 @@ function initGUI() {
   f2.add( gui.effect, "addBeam");
   f2.add( gui.effect, "removeBeam");
   f3.add( gui.effect, "simulate");
+  f3.add( gui.effect, "load");
   f1.open();
   f2.open();
   f3.open();
@@ -194,7 +225,7 @@ function onWindowResize() {
 
 function animate() {
 
-  coreMKB.animation.update();
+  coreMKB.animation.update2();
   controls.update();
   renderer.render( scene, camera );
 
