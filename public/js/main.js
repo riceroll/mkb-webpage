@@ -42,7 +42,7 @@ class Core {
     mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
     mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
     let obj = objectCasted();
-    coreMKB.mkb.hover(obj);   // do not use this here, this is callback
+    coreMKB.mkb.hover(obj);   // update the hovered object color
   }
 
   static onMouseClick(event) {
@@ -122,6 +122,7 @@ function initScene() {
 }
 
 function initGUI() {
+  // initialize the menu on the right top, reference:  dat.gui
 
   let effectController = function () {
     // dimension
@@ -226,6 +227,7 @@ function onWindowResize() {
 function animate() {
 
   coreMKB.animation.update2();
+
   controls.update();
   renderer.render( scene, camera );
 

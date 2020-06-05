@@ -75,6 +75,8 @@ class Beam {
   }
 
   createMesh() {
+    // create meshed, put them in the center of the world
+
     let mesh = new THREE.Object3D();
     let geometry = new THREE.CylinderBufferGeometry(1, 1, 1, 20);
     let material = new THREE.MeshLambertMaterial( {color: this.actuatorColor()} );
@@ -100,13 +102,14 @@ class Beam {
   }
 
   updateMesh() {
+    // rotate and translate already created meshes to the updated location
+
     let vec = this.vec();
     let length = this.length();
     let center =this.center();
 
     let actuatorLength = this.length() - this.tubeLength * 2;
     let actuatorWidth = Beam.actuatorWidth * (1 + this.expansion());
-
 
     this.mesh.position.set(0, 0, 0);
     this.mesh.rotateX(-Math.PI / 2);

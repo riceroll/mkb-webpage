@@ -6,6 +6,7 @@ class Joint {
   static colorHovered = new THREE.Color(1.0, 0.5, 0);
   static colorSelected = new THREE.Color(1.0, 0, 0);
   static color = new THREE.Color( 1, 1, 1 );
+
   constructor(x, y, z, mkb) {
     this.mkb = mkb;
     this.position = new THREE.Vector3(x, y, z);
