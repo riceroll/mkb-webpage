@@ -1,4 +1,4 @@
-import * as THREE from './modules/three.js/build/three.module.js';
+import * as THREE from '../../node_modules/three/build/three.module.js';
 import {Beam} from './beam.js'
 
 class Joint {
@@ -6,6 +6,7 @@ class Joint {
   static colorHovered = new THREE.Color(1.0, 0.5, 0);
   static colorSelected = new THREE.Color(1.0, 0, 0);
   static color = new THREE.Color( 1, 1, 1 );
+
   constructor(x, y, z, mkb) {
     this.mkb = mkb;
     this.position = new THREE.Vector3(x, y, z);
@@ -29,8 +30,9 @@ class Joint {
     this.beams.delete(beam);
     if (this.beams.size === 0) {
       this.mkb.removeJoint(this);
-    }
+    } 
   }
+
 
   createMesh() {
     let geometry = new THREE.SphereBufferGeometry(Joint.radius, 15, 15);
@@ -79,7 +81,10 @@ class Joint {
   select(t = true) {
     this.selected = t;
     this.updateColor();
+    
   }
+
+  removeJoint
 
 }
 
