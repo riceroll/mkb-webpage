@@ -1,11 +1,10 @@
-import * as THREE from '../../node_modules/three/build/three.module.js';
+import * as THREE from './modules/three.js/build/three.module.js';
 
 class Animation {
   static duration = 2000;   // ms
   constructor(mkb) {
     this.mkb = mkb;
     this.startTime = 0;
-    this.ws = null;
 
     this.playing = false;
   }
@@ -41,12 +40,6 @@ class Animation {
       this.mkb.animate(t);
     }
 
-  }
-
-  update2() {
-    if (this.ws) {
-      this.ws.send('hehehe');
-    }
   }
 
 

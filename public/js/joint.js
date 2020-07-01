@@ -30,8 +30,9 @@ class Joint {
     this.beams.delete(beam);
     if (this.beams.size === 0) {
       this.mkb.removeJoint(this);
-    }
+    } 
   }
+
 
   createMesh() {
     let geometry = new THREE.SphereBufferGeometry(Joint.radius, 15, 15);
@@ -80,7 +81,10 @@ class Joint {
   select(t = true) {
     this.selected = t;
     this.updateColor();
+    
   }
+
+  removeJoint
 
 }
 
