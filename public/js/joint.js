@@ -6,6 +6,7 @@ class Joint {
   static colorHovered = new THREE.Color(1.0, 0.5, 0);
   static colorSelected = new THREE.Color(1.0, 0, 0);
   static color = new THREE.Color( 1, 1, 1 );
+  static joints = [];
 
   constructor(x, y, z, mkb) {
     this.mkb = mkb;
@@ -15,6 +16,10 @@ class Joint {
     this.selected = false;
 
     this.mesh = this.createMesh();
+
+    this.id = Joint.joints.length;   // for converting to v, e format
+    Joint.joints.push(this);
+
     this.updateMesh();
 
     // animation

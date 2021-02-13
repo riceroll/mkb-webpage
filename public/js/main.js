@@ -2,8 +2,8 @@ import * as THREE from '../../node_modules/three/build/three.module.js';
 import { OrbitControls } from '../../node_modules/three/examples/jsm/controls/OrbitControls.js';
 import { GUI } from '../../node_modules/three/examples/jsm/libs/dat.gui.module.js';
 
-import { MKB } from './mkb.js';
-import { Animation } from './animation.js';
+import { Model } from './model.js';
+import { Viewer } from './viewer.js';
 
 let camera, scene, renderer, controls;
 let mouse = new THREE.Vector2();
@@ -13,245 +13,302 @@ let gui;
 let coreMKB;
 
 
-class Core {
-  constructor(x=3, y=3, z=3) {
-    this.mkb = new MKB(x, y, z, this);
-    this.animation = new Animation(this.mkb);
-    this.updateScene();
+let model = new Model();
+let viewer = new Viewer(model);
 
-    this.pressingMeta = false;
-    this.constraintChanged = false;
-  }
-
-  updateScene() {
-    if (! (this.mkb.mesh in scene) ) {
-      scene.add(this.mkb.mesh);
-    }
-    controls.target = this.mkb.center();
-  }
-
-  static GUIHovered() {
-    if (document.getElementsByClassName('hover').length > 0) return true;
-    for (let div of document.getElementsByClassName('slider')) {
-      if (div.parentElement.querySelector(':hover')) return true;
-    }
-    return false;
-  }
-
-  static onMouseMove( event ) {
-    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-    let obj = objectCasted();
-    coreMKB.mkb.hover(obj);   // update the hovered object color
-  }
-
-  static onMouseClick(event) {
-    console.log('core clicked', coreMKB.constraintChanged);
-    if (coreMKB.constraintChanged) {
-      console.log('change constraint');
-      coreMKB.mkb.changeConstraint(gui.effect.constraint);
-      coreMKB.constraintChanged = false;
-    }
-
-    if (Core.GUIHovered()) {
-      return 0;
-    }
-
-    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
-    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
-
-    let obj = objectCasted();
-
-    if  (!coreMKB.pressingMeta) coreMKB.mkb.deselectAll();
-    let constraint = coreMKB.mkb.select(obj);
-    if (constraint !== -1) {
-      gui.effect.constraint = constraint;
-    }
-  }
-
-  static onKeyDown(e) {
-    coreMKB.pressingMeta = (e.key === 'Meta');
-  }
-
-  static onKeyUp(e) {
-    coreMKB.pressingMeta = !(e.key === 'Meta');
-  }
-
-}
-
-function initCore() {
-  coreMKB = new Core(gui.effect.x, gui.effect.y, gui.effect.z);
-}
 
 function initScene() {
 
-  let info = document.createElement( 'div' );
-  info.style.position = 'absolute';
-  info.style.top = '10px';
-  info.style.width = '100%';
-  info.style.textAlign = 'center';
-  info.style.color = '#fff';
-  info.style.link = '#f80';
-  info.innerHTML = 'MKB';
-  document.body.appendChild( info );
+    let info = document.createElement( 'div' );
+    info.style.position = 'absolute';
+    info.style.top = '10px';
+    info.style.width = '100%';
+    info.style.textAlign = 'center';
+    info.style.color = '#fff';
+    info.style.link = '#f80';
+    info.innerHTML = 'MKB';
+    document.body.appendChild( info );
 
-  renderer = new THREE.WebGLRenderer();
-  renderer.setPixelRatio( window.devicePixelRatio );
-  renderer.setSize( window.innerWidth, window.innerHeight );
-  document.body.appendChild( renderer.domElement );
+    renderer = new THREE.WebGLRenderer();
+    renderer.setPixelRatio( window.devicePixelRatio );
+    renderer.setSize( window.innerWidth, window.innerHeight );
+    document.body.appendChild( renderer.domElement );
 
-  scene = new THREE.Scene();
-  scene.background = new THREE.Color( 0x222222 );
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color( 0x222222 );
 
-  camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
-  camera.position.set(0, -20, 1 );
-  camera.up.set(0,0,1);
+    camera = new THREE.PerspectiveCamera( 45, window.innerWidth / window.innerHeight, 0.1, 1000 );
+    camera.position.set(0, -20, 1 );
+    camera.up.set(0,0,1);
 
-  controls = new OrbitControls( camera, renderer.domElement );
-  controls.minDistance = 1;
-  controls.maxDistance = 500;
-  // controls.dynamicDampingFactor = 0.5;
+    controls = new OrbitControls( camera, renderer.domElement );
+    controls.minDistance = 1;
+    controls.maxDistance = 500;
+    // controls.dynamicDampingFactor = 0.5;
 
-  let aLight = new THREE.AmbientLight( "rgb(255,255,255)", 0.1 );
-  scene.add( aLight );
+    let aLight = new THREE.AmbientLight( "rgb(255,255,255)", 0.5 );
+    scene.add( aLight );
 
-  let dLight = new THREE.DirectionalLight( "rgb(255,255,255)", 0.7);
-  dLight.translateOnAxis(new THREE.Vector3(1,-1,1), 100);
-  scene.add( dLight );
+    let dLight = new THREE.DirectionalLight( "rgb(255,255,255)", 0.5);
+    dLight.translateOnAxis(new THREE.Vector3(1,-1,1), 100);
+    scene.add( dLight );
 
 }
 
+
+let utils = {
+    mouseOverGUI : false,
+
+    grow: ()=>{
+        for (let i=0; i<viewer.idSelected.length; i++) {
+            let type = viewer.typeSelected[i];
+            let id = viewer.idSelected[i];
+            if (type === "beam") {
+                model.l0[id] += 0.1;
+            }
+        }
+    },
+
+
+    shrink: ()=>{
+        for (let i=0; i<viewer.idSelected.length; i++) {
+            let type = viewer.typeSelected[i];
+            let id = viewer.idSelected[i];
+            if (type === "beam") {
+                model.l0[id] -= 0.1;
+            }
+        }
+    },
+
+    updateGUI: ()=>{
+        if (viewer.edittingMesh) {
+            utils.enable(gui.checkBoxes.addingPolytope);
+            utils.enable(gui.checkBoxes.removingPoly);
+
+        }
+        else {
+            utils.disable(gui.checkBoxes.addingPolytope);
+            utils.disable(gui.checkBoxes.removingPoly);
+        }
+    },
+
+    disable: (obj)=>{
+        try{
+            obj.setValue(0);
+        }
+        catch(e) {}
+        obj.__li.style.pointerEvents = "none";
+        obj.__li.style.opacity = .5;
+    },
+
+    enable: (obj)=>{
+        obj.__li.style.pointerEvents = "";
+        obj.__li.style.opacity = 1.;
+    },
+
+};
+
 function initGUI() {
-  // initialize the menu on the right top, reference:  dat.gui
+    gui = {};
+    gui.sliders = {};
+    gui.checkBoxes = {};
+    gui.window = new GUI();
+    let shape = gui.window.addFolder('shape');
+    let constraint = gui.window.addFolder('constraint');
+    let control = gui.window.addFolder('mode');
 
-  let effectController = function () {
-    // dimension
-    this.x= 2;
-    this.y= 2;
-    this.z= 2;
-    this.reset = initCore;
+    shape.add(utils, 'grow');
+    shape.add(utils, 'shrink');
+    control.add(model, 'playing').listen();
+    control.add(model, 'pressure').listen();
+    gui.checkBoxes.edittingMesh = shape.add(viewer, 'edittingMesh').listen();
+    gui.checkBoxes.addingPolytope = shape.add(viewer, 'addingPolytope').listen();
+    gui.checkBoxes.removingPoly = shape.add(viewer, 'removingPoly').listen();
 
-    // edit
-    this.constraint = 0;
-    this.addBeam = function() {
-      console.log('addBeam', coreMKB.mkb.addBeam());
+    // gui.checkBoxes.edittingMesh.onClick
+
+
+    let effectController = function () {this.constraint = 0;};
+    gui.effect = new effectController();
+    gui.sliders.constraint = constraint.add( gui.effect, "constraint", 0, 1, 0.25).listen();
+
+
+    shape.open();
+    constraint.open();
+    control.open();
+
+    // gui functions =============================================
+    // constraints
+    gui.sliders.constraint.onChange(function(value) {
+        for (let i=0; i<viewer.idSelected.length; i++) {
+            if (viewer.typeSelected[i] === 'beam') {
+                model.constraints[viewer.idSelected[i]] = value;
+            }
+        }
+    });
+
+    utils.disable(gui.sliders.constraint);
+    utils.disable(gui.checkBoxes.addingPolytope);
+    utils.disable(gui.checkBoxes.removingPoly);
+
+
+    gui.window.domElement.onmouseover = () => {
+        utils.mouseOverGUI = true;
     };
-    this.removeBeam = function() {
-      console.log('removeBeam', coreMKB.mkb.removeBeam());
+
+    gui.window.domElement.onmouseout = () => {
+        utils.mouseOverGUI = false;
     };
 
-    // action
-    this.simulate = function() {
-
-      // for (let j of coreMKB.mkb.joints) {
-      //   let p = new THREE.Vector3();
-      //   j.setNextPosition(p.copy(j.position).divideScalar(1.4));
-      // }
-
-      let ws = new WebSocket('ws://localhost:8765');
-      ws.onmessage = (event) => {
-        let json = event.data;
-        let data = JSON.parse(json);
-        let v = data['v'];
-        let e = data['e'];
-        coreMKB.mkb.loadVE(v, e);
-      };
-      ws.onopen = (event) => {
-        ws.send('hehe');
-        coreMKB.animation.ws = ws;
-        coreMKB.animation.start();
-      };
-
+    gui.window.domElement.onchange = () => {
+        utils.updateGUI();
     };
 
-
-    this.load = function() {
-      let ws = new WebSocket('ws://localhost:8765');
-      ws.onmessage = (event) => {
-        let json = event.data;
-        let data = JSON.parse(json);
-        let v = data['v'];
-        let e = data['e'];
-        coreMKB.mkb.loadVE(v, e);
-      };
-      ws.onopen = (event) => {
-        ws.send('hehe');
-      };
+    gui.checkBoxes.addingPolytope.__checkbox.onclick = gui.checkBoxes.addingPolytope.__li.onclick = () => {
+        gui.checkBoxes.removingPoly.setValue(false);
     };
-  };
 
-  gui = {};
-  gui.sliders = {};
-  gui.window = new GUI();
-  let f1 = gui.window.addFolder('dimension');
-  let f2 = gui.window.addFolder('edit');
-  let f3 = gui.window.addFolder('action');
-
-  gui.effect = new effectController();
-  f1.add( gui.effect, "x", 2, 6 ,1);
-  f1.add( gui.effect, "y", 2, 6 ,1);
-  f1.add( gui.effect, "z", 2, 6 ,1);
-  f1.add( gui.effect, "reset");
-  gui.sliders.constraint = f2.add( gui.effect, "constraint", 0, 1, 0.25).listen();
-  f2.add( gui.effect, "addBeam");
-  f2.add( gui.effect, "removeBeam");
-  f3.add( gui.effect, "simulate");
-  f3.add( gui.effect, "load");
-  f1.open();
-  f2.open();
-  f3.open();
+    gui.checkBoxes.removingPoly.__checkbox.onclick = gui.checkBoxes.removingPoly.__li.onclick = () => {
+        gui.checkBoxes.addingPolytope.setValue(false);
+    }
 
 
-  gui.sliders.constraint.onChange(function(value) {
-    console.log('constraint onChange');
-    coreMKB.constraintChanged = true;
-  });
+}
 
+function GUIHovered() {
+    if (document.getElementsByClassName('hover').length > 0)
+        return 1;
+    for (let div of document.getElementsByClassName('slider')) {
+        if (div.parentElement.querySelector(':hover')) return 1;
+    }
+    return 0;
 }
 
 function objectCasted() {
-  raycaster.setFromCamera( mouse, camera );
-  let intersects = raycaster.intersectObjects( scene.children, true );
-  if (intersects.length > 0) {
-    let intersect = intersects[0];
-    return intersect.object;
-  }
+    raycaster.setFromCamera( mouse, camera );
+    let intersects = raycaster.intersectObjects( scene.children, true );
+    while (intersects.length > 0) {
+        let intersect = intersects.shift().object;
+
+        if (intersect.visible) {
+
+            return intersect;
+        }
+    }
 }
 
 function onWindowResize() {
-  camera.aspect = window.innerWidth / window.innerHeight;
-  camera.updateProjectionMatrix();
-  renderer.setSize( window.innerWidth, window.innerHeight );
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize( window.innerWidth, window.innerHeight );
+}
+
+function onMouseClick(event) {
+    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+    if (utils.mouseOverGUI) {
+        return 0;
+    }
+
+    if (!viewer.pressingMeta) {
+        viewer.typeSelected = [];
+        viewer.idSelected = [];
+    }
+
+    utils.disable(gui.sliders.constraint);
+    let obj = objectCasted();
+    if (!obj) return 0;
+
+    let selected = false;    // selection already selected
+    for (let i=0; i<viewer.idSelected.length; i++) {
+        if (viewer.idSelected[i] === obj.userData.id && viewer.typeSelected[i] === obj.userData.type) selected = false;
+    }
+
+    viewer.idSelected.push(obj.userData.id);
+    viewer.typeSelected.push(obj.userData.type);
+
+    // slider
+    if (viewer.idSelected.length === 1 && viewer.typeSelected[0] === 'beam') {
+        gui.sliders.constraint.setValue(model.constraints[viewer.idSelected[0]]);
+    }
+    if (viewer.typeSelected.includes("beam")) {
+        utils.enable(gui.sliders.constraint);
+    }
+
+    if (viewer.edittingMesh && viewer.idSelected.length === 1 && viewer.typeSelected[0] === "face") {
+
+        if (viewer.addingPolytope) {
+            model.addPolytope(viewer.idSelected[0]);
+        }
+        else if (viewer.removingPoly) {
+            model.removePolytope(viewer.idSelected[0]);
+        }
+
+        viewer.idSelected = [];
+        viewer.typeSelected = [];
+        viewer.createAll();
+
+    }
+
+
+}
+
+function onMouseMove( event ) {
+    mouse.x = ( event.clientX / window.innerWidth ) * 2 - 1;
+    mouse.y = - ( event.clientY / window.innerHeight ) * 2 + 1;
+
+    let obj = objectCasted();
+
+
+}
+
+function onKeyDown( e ) {
+    viewer.pressingMeta = e.key === 'Meta';
+}
+
+
+function onKeyUp( e ) {
+    if (e.key === 'Meta') {
+        viewer.pressingMeta = false;
+    }
 }
 
 function animate() {
 
-  coreMKB.animation.update2();
+    controls.update();
 
-  controls.update();
-  renderer.render( scene, camera );
+    model.step();
+    viewer.updateMeshes();
 
-  requestAnimationFrame( animate );
+    // put render right before requestAnimationFrame, it will do scene.updateMatrixWorld() for raytracing
+    renderer.render( scene, camera );
+
+    requestAnimationFrame( animate );
 }
-
 
 // main ======================================================
 
 initGUI();
 initScene();
-initCore();
+
+scene.add(viewer.mesh);
+
 animate();
 
-window.addEventListener( 'mousemove', Core.onMouseMove, false );
-window.addEventListener( 'mousedown', Core.onMouseClick, false );
-window.addEventListener( 'keydown', Core.onKeyDown, false );
-window.addEventListener( 'keyup', Core.onKeyUp, false );
 window.addEventListener( 'resize', onWindowResize, false );
+window.addEventListener( 'mousedown', onMouseClick, false );
+window.addEventListener( 'mousemove', onMouseMove, false );
+window.addEventListener( 'keydown', onKeyDown, false );
+window.addEventListener( 'keyup', onKeyUp, false );
 
-
-window.core = coreMKB;
+window.model = model;
+window.viewer = viewer;
+window.v = Viewer;
 window.scene = scene;
-window.THREE = THREE;
+window.thre = THREE;
 window.camera = camera;
 window.renderer = renderer;
 window.controls = controls;
+window.gui = gui;
+window.utils = utils;
